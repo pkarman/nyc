@@ -54,6 +54,7 @@ class NYC {
 
     this.cacheDirectory = (config.cacheDir && path.resolve(config.cacheDir)) || findCacheDir({ name: 'nyc', cwd: this.cwd })
     this.cache = Boolean(this.cacheDirectory && config.cache)
+    this.concurrency = config.concurrency ? os.cpus().length : 1
 
     this.extensions = [].concat(config.extension || [])
       .concat('.js')
@@ -238,7 +239,7 @@ class NYC {
 
       const filesToInstrument = await this.exclude.glob(input)
 
-      const concurrency = output ? os.cpus().length : 1
+      const concurrency = output ? this.concurrency : 1
       if (this.config.completeCopy && output) {
         const files = await glob(path.resolve(input, '**'), {
           dot: true,
@@ -427,7 +428,7 @@ class NYC {
         const report = await this.coverageFileLoad(f, baseDirectory)
         map.merge(report)
       },
-      { concurrency: 1 }
+      { concurrency: this.concurrency }
     )
 
     map.data = await this.sourceMaps.remapCoverage(map.data)
@@ -525,7 +526,7 @@ class NYC {
     return pMap(
       files,
       f => this.coverageFileLoad(f, baseDirectory),
-      { concurrency: os.cpus().length }
+      { concurrency: this.concurrency }
     )
   }
 
